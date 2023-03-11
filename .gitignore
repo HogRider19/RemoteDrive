@@ -106,6 +106,8 @@ venv.bak/
 
 test.db
 
+db_schema
+
 # mkdocs documentation
 /site
 
