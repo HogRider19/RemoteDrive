@@ -3,8 +3,11 @@ from fastapi import Depends, FastAPI
 
 from auth.models import User
 from auth.schemas import UserCreate, UserRead, UserUpdate
-from auth.users import auth_backend, current_active_user, fastapi_users
+from auth.users import auth_backend, get_current_user, fastapi_users
 from database.db import create_db_and_tables
+
+from drive.routers import router as drive_router
+
 
 app = FastAPI(title="RemoteDrive")
 
@@ -37,9 +40,15 @@ app.include_router(
     tags=["users"],
 )
 
+app.include_router(
+    drive_router,
+    prefix='/drive',
+    tags=['drive'],
+)
+
 
 @app.get("/authenticated-route")
-async def authenticated_route(user: User = Depends(current_active_user)):
+async def authenticated_route(user: User = Depends(get_current_user)):
     return {"message": f"Hello {user.email}!"}
 
 
