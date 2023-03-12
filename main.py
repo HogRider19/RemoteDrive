@@ -8,6 +8,10 @@ from database.db import create_db_and_tables
 
 from drive.routers import router as drive_router
 
+from config.config import MEDIAPARH
+
+import os
+
 
 app = FastAPI(title="RemoteDrive")
 
@@ -47,13 +51,10 @@ app.include_router(
 )
 
 
-@app.get("/authenticated-route")
-async def authenticated_route(user: User = Depends(get_current_user)):
-    return {"message": f"Hello {user.email}!"}
-
-
 @app.on_event("startup")
 async def on_startup():
+    if not os.path.exists(MEDIAPARH):
+        os.mkdir(MEDIAPARH)
     await create_db_and_tables()
 
 
