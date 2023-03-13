@@ -17,7 +17,7 @@ from drive.utils import save_files
 router = APIRouter()
 
 
-@router.post('/directory/upload')
+@router.post('/directory/upload', status_code=status.HTTP_201_CREATED)
 async def load_directory(
     tasks: BackgroundTasks,
     dir_name: str = Form(...),
@@ -32,14 +32,25 @@ async def load_directory(
 
     if parent_id is None:
         dir_path = f"{base_path}/{dir_name}"
-        if not os.path.exists(dir_path):
-            os.mkdir(dir_path)
-        tasks.add_task(save_files, dir_path, files)
     else:
         parent_result: Result = await db.execute(
             select(Directory).where(Directory.id==parent_id))
-        parent = parent_result.scalars().first()
-        if parent is None:
+        parent: Directory = parent_result.scalars().first()
+        if parent is None or parent.user_id != user.id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                  detail="Invalid parent_id")
+        dir_path = f"{base_path}/{parent.path}/{dir_name}"
+
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+        tasks.add_task(save_files, dir_path, files)
+
+    dir_ = Directory(
+        name=dir_name,
+        path=dir_path,
+        user_id=user.id,
+    )
+    db.add(dir_)
+    await db.commit()
+
     return user
